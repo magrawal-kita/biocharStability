@@ -10,7 +10,6 @@ set of utility functions to load, handle, save the data
 # imports
 from logging import raiseExceptions
 from operator import index
-from setuptools_scm import meta
 
 import itertools
 from tabulate import tabulate
@@ -522,7 +521,7 @@ def dry2daf(df, x, ash='Ash'):
     How are NaNs handled: NaNs in one colum remain NaNs 
     '''
     dff = df.copy()
-    dff.replace('na', np.NaN, inplace=True)
+    dff.replace('na', np.nan, inplace=True)
     if ash == 'Ash':
         # the mean of both ash content is taken, if any gaps 
         dff['Ash'] = dff[['Ash550', 'Ash700']].mean(axis=1)

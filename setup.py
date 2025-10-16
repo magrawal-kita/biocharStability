@@ -22,15 +22,18 @@ packages = [
     "geopandas>=0.10.2",
     "matplotlib>=3.6.2",
     "seaborn>=0.11.2",
-    "plotly==5.8.2",
+    "plotly>=5.8.0",
     "python-ternary==1.0.8",
     "bokeh>=2.4.3",
     "scipy>=1.9.1",
     "scikit-learn>=1.1.2",
     "stats_arrays>=0.6.5",
     "lmfit>=1.0.3",
-    "adjusttext==0.7.3.1",
-    "numdifftools==0.9.39",
+    "adjusttext>=0.7.3",
+    "numdifftools>=0.9.39",
+    "openpyxl>=3.0.0",
+    "tabulate>=0.8.0",
+    "statsmodels>=0.13.0",
 ]
 
 setup(

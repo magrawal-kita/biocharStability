@@ -392,7 +392,11 @@ def do_the_fit(f_model=doubleExp, xdata=[0], ydata=[0], p0=None, method=None, bo
         p_std = np.sqrt(np.diag(p_cov)) # Standard deviation of each parameter  
         r2, residuals = rsquare(f_model, xdata, ydata, p_opt) # R2
         residuals, chisqr, redchisqr, aic, bic = lmfit_fitting_stats(f_model, xdata, ydata, p_opt)
-        DW = durbin_watson(residuals)
+        # Safe Durbin-Watson calculation: handle zero residuals (perfect fit)
+        try:
+            DW = durbin_watson(residuals) if np.sum(residuals**2) > 0 else np.nan
+        except ZeroDivisionError:
+            DW = np.nan
         fitting_output[('goodness', 'r2', '1')] = r2
         fitting_output[('goodness', 'chisqr', '1')] = chisqr
         fitting_output[('goodness', 'redchisqr', '1')] = redchisqr
@@ -538,7 +542,12 @@ def do_the_lmfit(f_model=doubleExp_u,
         L = [params[k] for k in params]
         return f_model(x, *L) - y
 
-    fitted_params = minimize(f_model_lmfit, params, args=(xdata, ydata,), method=method)
+    try:
+        fitted_params = minimize(f_model_lmfit, params, args=(xdata, ydata,), method=method)
+    except Exception as e:
+        print(f"lmfit minimize failed: {e}")
+        return {}
+    
     p_opt = [fitted_params.params[p].value for p in fitted_params.var_names]
     r2, residuals = rsquare(f_model, xdata, ydata, p_opt)
     DW = durbin_watson(residuals)
@@ -554,7 +563,7 @@ def do_the_lmfit(f_model=doubleExp_u,
         fitting_output[('stddev_abs', 'std_'+p, 'abs')] = fitted_params.params[p].stderr
         fitting_output[('stddev_rel', 'std_'+p, 'rel')] = fitted_params.params[p].stderr/fitted_params.params[p].value*100 if fitted_params.params[p].stderr is not None else np.nan
     
-    if hasattr(fitted_params, 'covar'):
+    if hasattr(fitted_params, 'covar') and fitted_params.covar is not None:
         for i, p1 in enumerate(fitted_params.var_names):
             for j, p2 in enumerate(fitted_params.var_names[i+1:]): # double for loop, to avoid dupplicates
                 if p1 != p2:
@@ -1263,7 +1272,7 @@ def correlation_linear(fitdata, metadata, x, y='BC_Th_Ts', Ts=15, Th=100, plot=T
     fitdata = fitdata.set_index('ID_obs') # change index to ID_obs, so that series have the same index
     fitdata = fitdata[fitdata.index.isin(obs)].copy(deep=True) # filter metadata for the observations in the model minus outliers
     sub_metadata = metadata[metadata.index.isin(obs)] # filter metadata for the observations in the model
-    sub_metadata = sub_metadata.replace('na',np.NaN) # replaces 'na' strings by NaN, for correct handling 
+    sub_metadata = sub_metadata.replace('na',np.nan) # replaces 'na' strings by NaN, for correct handling 
     
     # Make sure fitdata and sub_metadata have same index elements & order
     fitdata = fitdata.sort_index() # sort index, to be sure it matches with metadata
@@ -1523,7 +1532,7 @@ def _align_dataframes(fitdata, metadata, outliers):
     
     fitdata = fitdata[fitdata.index.isin(obs)].copy(deep=True) # filter metadata for the observations in the model minus outliers
     sub_metadata = metadata[metadata.index.isin(obs)] # filter metadata for the observations in the model
-    sub_metadata = sub_metadata.replace('na',np.NaN) # replaces 'na' strings by NaN, for correct handling 
+    sub_metadata = sub_metadata.replace('na',np.nan) # replaces 'na' strings by NaN, for correct handling 
     
     # Make sure fitdata and sub_metadata have same index elements & order
     fitdata = fitdata.sort_index() # sort index, to be sure it matches with metadata
